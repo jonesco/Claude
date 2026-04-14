@@ -8,9 +8,9 @@ export interface GenerationResult {
 const GEMINI_BASE_URL =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
-// gemini-3.1-flash-image-preview — the image generation model
-// (displayed as "Nano Banana 2" in AI Studio)
-const IMAGE_MODEL = "gemini-3.1-flash-image-preview";
+// gemini-2.5-flash-image — image generation model
+// (displayed as "Nano Banana" in AI Studio)
+const IMAGE_MODEL = "gemini-2.5-flash-image";
 
 interface GeminiImagePart {
   inlineData?: {
