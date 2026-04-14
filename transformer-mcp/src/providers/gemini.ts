@@ -1,5 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export interface GenerationResult {
   imageUrl?: string;
   imageBase64?: string;
@@ -7,9 +5,36 @@ export interface GenerationResult {
   error?: string;
 }
 
+const GEMINI_BASE_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models";
+
+// gemini-2.0-flash-preview-image-generation supports image output via generateContent
+const IMAGE_MODEL = "gemini-2.0-flash-preview-image-generation";
+
+interface GeminiImagePart {
+  inlineData?: {
+    mimeType: string;
+    data: string; // base64
+  };
+  text?: string;
+}
+
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: GeminiImagePart[];
+    };
+  }>;
+  error?: {
+    message: string;
+    code: number;
+  };
+}
+
 /**
- * Generates an image using the Google Gemini Imagen API.
- * Reads GEMINI_API_KEY from environment.
+ * Generates an image using the Gemini REST API (generateContent).
+ * Uses X-goog-api-key header auth; reads GEMINI_API_KEY from environment.
+ * Model: gemini-2.0-flash-preview-image-generation
  */
 export async function generateWithGemini(
   prompt: string
@@ -19,30 +44,46 @@ export async function generateWithGemini(
     return { error: "GEMINI_API_KEY environment variable is not set." };
   }
 
+  const url = `${GEMINI_BASE_URL}/${IMAGE_MODEL}:generateContent`;
+
+  const body = {
+    contents: [
+      {
+        parts: [{ text: prompt }],
+      },
+    ],
+    generationConfig: {
+      responseModalities: ["image", "text"],
+    },
+  };
+
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    // Use the Imagen 3 model for image generation
-    const model = genAI.getGenerativeModel({
-      model: "imagen-3.0-generate-002",
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": apiKey,
+      },
+      body: JSON.stringify(body),
     });
 
-    // @ts-expect-error - generateImages is available on Imagen models
-    const response = await model.generateImages({
-      prompt,
-      number_of_images: 1,
-      aspect_ratio: "3:4",
-    });
+    const json = (await response.json()) as GeminiResponse;
 
-    // @ts-expect-error - response structure for Imagen
-    const image = response?.images?.[0];
-    if (!image) {
-      return { error: "Gemini returned no images." };
+    if (!response.ok || json.error) {
+      const msg = json.error?.message ?? `HTTP ${response.status}`;
+      return { error: `Gemini API error: ${msg}` };
+    }
+
+    const parts = json.candidates?.[0]?.content?.parts ?? [];
+    const imagePart = parts.find((p) => p.inlineData?.data);
+
+    if (!imagePart?.inlineData) {
+      return { error: "Gemini returned no image data." };
     }
 
     return {
-      imageBase64: image.imageBytes,
-      mimeType: image.mimeType ?? "image/png",
+      imageBase64: imagePart.inlineData.data,
+      mimeType: imagePart.inlineData.mimeType ?? "image/png",
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
