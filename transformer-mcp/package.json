@@ -1,0 +1,26 @@
+{
+  "name": "transformer-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for generating retro 1980s transformer concept art via Gemini or ChatGPT",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "openai": "^4.77.0",
+    "dotenv": "^16.4.7",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.7.3",
+    "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
