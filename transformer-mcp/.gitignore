@@ -1,4 +1,4 @@
 node_modules/
 dist/
-.env
+# .env intentionally tracked for this project — rotate keys after cloning
 *.js.map
