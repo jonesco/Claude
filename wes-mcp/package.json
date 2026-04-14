@@ -1,7 +1,7 @@
 {
-  "name": "transformer-mcp",
+  "name": "wes-mcp",
   "version": "1.0.0",
-  "description": "MCP server for generating retro 1980s transformer concept art via Gemini or ChatGPT",
+  "description": "Wes's personal MCP server — transformer image generation and future tools",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
