@@ -8,13 +8,23 @@ export interface GenerationResult {
 const GEMINI_BASE_URL =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
-// Imagen 3 — stable image generation model, uses :predict endpoint
-const IMAGE_MODEL = "imagen-3.0-generate-002";
+// gemini-2.0-flash-exp supports image generation via generateContent
+// with responseModalities on standard AI Studio API keys
+const IMAGE_MODEL = "gemini-2.0-flash-exp";
 
-interface ImagenResponse {
-  predictions?: Array<{
-    bytesBase64Encoded?: string;
-    mimeType?: string;
+interface GeminiImagePart {
+  inlineData?: {
+    mimeType: string;
+    data: string;
+  };
+  text?: string;
+}
+
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: GeminiImagePart[];
+    };
   }>;
   error?: {
     message: string;
@@ -23,9 +33,9 @@ interface ImagenResponse {
 }
 
 /**
- * Generates an image using the Imagen 3 REST API (:predict endpoint).
+ * Generates an image using the Gemini REST API (generateContent).
  * Uses X-goog-api-key header auth; reads GEMINI_API_KEY from environment.
- * Model: imagen-3.0-generate-002
+ * Model: gemini-2.0-flash-exp with responseModalities: ["image"]
  */
 export async function generateWithGemini(
   prompt: string
@@ -35,13 +45,12 @@ export async function generateWithGemini(
     return { error: "GEMINI_API_KEY environment variable is not set." };
   }
 
-  const url = `${GEMINI_BASE_URL}/${IMAGE_MODEL}:predict`;
+  const url = `${GEMINI_BASE_URL}/${IMAGE_MODEL}:generateContent`;
 
   const body = {
-    instances: [{ prompt }],
-    parameters: {
-      sampleCount: 1,
-      aspectRatio: "3:4", // portrait — closest to 8.5x11
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseModalities: ["image"],
     },
   };
 
@@ -55,21 +64,23 @@ export async function generateWithGemini(
       body: JSON.stringify(body),
     });
 
-    const json = (await response.json()) as ImagenResponse;
+    const json = (await response.json()) as GeminiResponse;
 
     if (!response.ok || json.error) {
       const msg = json.error?.message ?? `HTTP ${response.status}`;
       return { error: `Gemini API error: ${msg}` };
     }
 
-    const prediction = json.predictions?.[0];
-    if (!prediction?.bytesBase64Encoded) {
-      return { error: "Imagen returned no image data." };
+    const parts = json.candidates?.[0]?.content?.parts ?? [];
+    const imagePart = parts.find((p) => p.inlineData?.data);
+
+    if (!imagePart?.inlineData) {
+      return { error: "Gemini returned no image data." };
     }
 
     return {
-      imageBase64: prediction.bytesBase64Encoded,
-      mimeType: prediction.mimeType ?? "image/png",
+      imageBase64: imagePart.inlineData.data,
+      mimeType: imagePart.inlineData.mimeType ?? "image/png",
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
