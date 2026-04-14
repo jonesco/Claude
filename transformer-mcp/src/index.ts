@@ -1,4 +1,7 @@
 import "dotenv/config";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -93,17 +96,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     ].join("\n"),
   });
 
-  // Return image as URL or embedded base64
+  // Save image to Desktop and return the file path
   if (result.imageUrl) {
     contentParts.push({
       type: "text",
       text: `Image URL: ${result.imageUrl}`,
     });
   } else if (result.imageBase64) {
+    const ext = (result.mimeType ?? "image/png").split("/")[1] ?? "png";
+    const filename = `transformer-${input.subject.replace(/\s+/g, "-")}-${Date.now()}.${ext}`;
+    const filePath = path.join(os.homedir(), "Desktop", filename);
+    fs.writeFileSync(filePath, Buffer.from(result.imageBase64, "base64"));
     contentParts.push({
-      type: "image",
-      data: result.imageBase64,
-      mimeType: result.mimeType ?? "image/png",
+      type: "text",
+      text: `Image saved to: ${filePath}`,
     });
   }
 
