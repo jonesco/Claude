@@ -1,3 +1,37 @@
+/**
+ * Subject-specific art direction hints injected after the base prompt.
+ * Keys are lowercased and matched via substring so "UPS truck", "ups delivery truck", etc. all hit the same entry.
+ */
+const SUBJECT_HINTS: Array<{ keywords: string[]; hint: string }> = [
+  {
+    keywords: ["ups"],
+    hint: [
+      "UPS truck color and design specifics:",
+      "• Primary color: UPS signature brown (#4E3629) across all panels and armor.",
+      "• Accent color: UPS yellow/gold (#FFB500) for trim lines, visor glow, and shield emblem on the chest.",
+      "• The large rectangular cargo box becomes the robot's broad chest and upper torso; the rolling rear cargo door unfolds as a chest armor plate.",
+      "• The flat cab-over nose folds down to form the robot's helmet — angular and armored, with a visor shaped like the windshield strip.",
+      "• Front bumper and grille split to form shoulder pauldrons.",
+      "• Side cargo panels fold outward to become forearm gauntlets.",
+      "• Undercarriage frame and wheel wells become the legs and shin guards.",
+      "• The robot's weapon is a heavy-duty package-launcher cannon (styled like an oversized barcode scanner) held in one hand.",
+      "• A small UPS shield logo is embossed on the chest plate.",
+      "• In vehicle mode show a classic UPS P-series step-van (cab-over box truck) with four wheels, brown body, and yellow UPS lettering on the side.",
+    ].join("\n"),
+  },
+];
+
+/**
+ * Returns additional art-direction hint text for a given subject, or undefined if none.
+ */
+function getSubjectHint(subject: string): string | undefined {
+  const lower = subject.toLowerCase();
+  const match = SUBJECT_HINTS.find((entry) =>
+    entry.keywords.some((kw) => lower.includes(kw))
+  );
+  return match?.hint;
+}
+
 export const BASE_PROMPT_TEMPLATE = `Create a retro 1980s toy concept sheet illustration drawn on light graph paper, using colored pencil and ink linework, similar to a hand-drawn mechanical design sketch for a transforming robot toy.
 
 The canvas is 8.5 x 11 inches (portrait orientation), sized like a standard sheet of paper.
@@ -26,11 +60,16 @@ Layout: Robot centered in upper half, alternate mode centered in lower half. Bot
 Subject: A robot that transforms into: {SUBJECT}`;
 
 /**
- * Assembles the final prompt by substituting the subject and optionally
- * appending refinement feedback.
+ * Assembles the final prompt by substituting the subject, injecting any
+ * subject-specific art direction hints, and optionally appending refinement feedback.
  */
 export function assemblePrompt(subject: string, feedback?: string): string {
-  const prompt = BASE_PROMPT_TEMPLATE.replace("{SUBJECT}", subject);
+  let prompt = BASE_PROMPT_TEMPLATE.replace("{SUBJECT}", subject);
+
+  const hint = getSubjectHint(subject);
+  if (hint) {
+    prompt = `${prompt}\n\n${hint}`;
+  }
 
   if (feedback) {
     return `${prompt}\n\nRefinement correction: ${feedback}`;
