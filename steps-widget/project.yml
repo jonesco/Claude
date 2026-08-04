@@ -1,0 +1,68 @@
+name: StepsWidget
+options:
+  bundleIdPrefix: com.jonesco.stepswidget
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    # Set your Apple Developer Team ID here (or set it per-target in Xcode
+    # after generating the project) so both targets sign consistently.
+    DEVELOPMENT_TEAM: ""
+targets:
+  StepsWidgetApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: StepsWidgetApp
+      - path: Shared
+    entitlements:
+      path: StepsWidgetApp/StepsWidgetApp.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jonesco.stepswidget
+    info:
+      path: StepsWidgetApp/Info.plist
+      properties:
+        CFBundleDisplayName: "Steps Widget"
+        NSHealthShareUsageDescription: "Steps Widget reads your step count from Health so it can show it in your Home Screen widget."
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jonesco.stepswidget
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: StepsWidgetExtension
+        embed: true
+      - sdk: HealthKit.framework
+
+  StepsWidgetExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: StepsWidgetExtension
+      - path: Shared
+    entitlements:
+      path: StepsWidgetExtension/StepsWidgetExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jonesco.stepswidget
+    info:
+      path: StepsWidgetExtension/Info.plist
+      properties:
+        CFBundleDisplayName: "Steps Widget"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jonesco.stepswidget.widget
+        SKIP_INSTALL: YES
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
